@@ -33,7 +33,14 @@ public:
 
     friend std::ostream &operator<<(std::ostream &os, const Graph &graph);
 
-    class EdgesHaveVerticesNotInGraph : public std::exception {};
+    class EdgesHaveVerticesNotInGraph : public std::exception {
+        std::basic_string<char> return_message;
+
+    public:
+        explicit EdgesHaveVerticesNotInGraph(const VertexName &vertex, const std::pair<VertexName,VertexName> &edge);
+        ~EdgesHaveVerticesNotInGraph() = default;
+        const char* what() const noexcept override;
+    };
 
 };
 

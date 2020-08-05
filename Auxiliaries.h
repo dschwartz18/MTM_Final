@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <set>
 #include <sstream>
+#include <cctype>
+#include <fstream>
 
 #include "Graph.h"
 #include "VertexName.h"
@@ -22,6 +24,7 @@ std::string rtrim(const std::string& s);
 std::string trim(const std::string& s);
 
 std::basic_string<char> eliminate_spaces(std::basic_string<char> const &string);
+void checkValidGraphName(std::basic_string<char> &graph_name);
 
 class UnrecognizedCommand : public std::exception{
     std::basic_string<char> return_message;
@@ -39,5 +42,12 @@ public:
     explicit UndefinedVariable(const std::basic_string<char>& variable);
 };
 
+class InvalidGraphName : public std:: exception{
+    std::basic_string<char> return_message;
+public:
+    ~InvalidGraphName() = default;
+    const char* what() const noexcept override;
+    explicit InvalidGraphName(const std::basic_string<char>& graph_name);
+};
 
 #endif //MTM_FINAL_AUXILIARIES_H

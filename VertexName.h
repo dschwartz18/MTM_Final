@@ -18,6 +18,7 @@ public:
     VertexName(VertexName const &name) = default;
     VertexName& operator=(VertexName const &name) = default;
 
+    std::basic_string<char> toString() const;
     bool operator<(VertexName const &name) const;
     bool operator!=(VertexName const &name) const;
 
@@ -25,11 +26,12 @@ public:
     friend std::ostream &operator<<(std::ostream &os, const VertexName &name);
 
     class InvalidVertexName : public std::exception {
-        std::basic_string<char> name;
+        std::basic_string<char> return_message;
 
     public:
         explicit InvalidVertexName(const std::basic_string<char>& v_name);
         ~InvalidVertexName() = default;
+        const char* what() const noexcept override;
     };
 
 };

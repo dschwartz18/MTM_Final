@@ -5,15 +5,17 @@
 #include "Graph.h"
 
 
-Graph::Graph(std::set<VertexName> &vertices_parameter, std::set<std::pair<VertexName,VertexName>> &edges_parameter) :
-vertices(vertices_parameter),
-edges(edges_parameter)
-{
-    for(auto const & edge: edges){
-        if(vertices.find(edge.first) == vertices.end() || vertices.find(edge.second) == vertices.end()){
-            throw(EdgesHaveVerticesNotInGraph());
+Graph::Graph(std::set<VertexName> &vertices_parameter, std::set<std::pair<VertexName,VertexName>> &edges_parameter){
+    for(auto const & edge: edges_parameter){
+        if(vertices_parameter.find(edge.first) == vertices_parameter.end()){
+            throw(EdgesHaveVerticesNotInGraph(edge.first, edge));
+        }
+        if(vertices_parameter.find(edge.second) == vertices_parameter.end()){
+            throw(EdgesHaveVerticesNotInGraph(edge.second, edge));
         }
     }
+    vertices = vertices_parameter;
+    edges = edges_parameter;
 }
 
 
@@ -114,8 +116,19 @@ std::ostream &operator<<(std::ostream &os, const Graph &graph) {
     for(auto const& edge: graph.edges){
         os << edge.first << ' ' << edge.second << std::endl;
     }
-    os << std::endl;
     return os;
+}
+
+
+Graph::EdgesHaveVerticesNotInGraph::EdgesHaveVerticesNotInGraph(const VertexName &vertex, const std::pair<VertexName,VertexName> &edge) {
+    return_message = "Error: The edge ";
+    return_message += "<" + edge.first.toString() + "," + edge.second.toString() + ">";
+    return_message += " contains a vertex that is not in the graph ";
+    return_message += "'" + vertex.toString() + "'";
+}
+
+const char *Graph::EdgesHaveVerticesNotInGraph::what() const noexcept {
+    return return_message.std::string::c_str();
 }
 
 

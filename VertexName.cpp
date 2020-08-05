@@ -62,6 +62,17 @@ bool VertexName::operator!=(const VertexName &name) const {
     return less_than;
 }
 
-VertexName::InvalidVertexName::InvalidVertexName(const std::basic_string<char> &v_name) :
-name(v_name)
-{}
+std::basic_string<char> VertexName::toString() const {
+    return vertex_name;
+}
+
+
+VertexName::InvalidVertexName::InvalidVertexName(const std::basic_string<char> &vertex) {
+    return_message = "Error: Invalid Vertex Name ";
+    return_message +=  "'" + vertex + "'";
+}
+
+const char *VertexName::InvalidVertexName::what() const noexcept {
+    return return_message.std::string::c_str();
+}
+

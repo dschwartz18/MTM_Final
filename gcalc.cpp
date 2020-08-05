@@ -44,10 +44,10 @@ Graph calculate(std::basic_string<char> &command) {
         checkGraphVariable(graph_variable_right);
 
         switch(operation){
-            case '+': symbol_table[graph_variable_left] + symbol_table[graph_variable_right];
-            case '^': symbol_table[graph_variable_left] ^ symbol_table[graph_variable_right];
-            case '-': symbol_table[graph_variable_left] - symbol_table[graph_variable_right];
-            case '*': symbol_table[graph_variable_left] * symbol_table[graph_variable_right];
+            case '+': return (symbol_table[graph_variable_left] + symbol_table[graph_variable_right]);
+            case '^': return (symbol_table[graph_variable_left] ^ symbol_table[graph_variable_right]);
+            case '-': return (symbol_table[graph_variable_left] - symbol_table[graph_variable_right]);
+            case '*': return (symbol_table[graph_variable_left] * symbol_table[graph_variable_right]);
             default: throw(UnrecognizedCommand(command));
         }
     }
@@ -94,8 +94,9 @@ Graph create_graph(basic_string<char> const &command) {
                 VertexName src_vertex(trim(edge.substr(0, edge_separator)));
                 VertexName dest_vertex(trim(edge.substr(edge_separator+1)));
                 edges.insert(std::pair<VertexName,VertexName>(src_vertex, dest_vertex));
-            } catch(VertexName::InvalidVertexName& name){
-                name.what();
+            } catch(VertexName::InvalidVertexName& error){
+                cout << error.what() << " in list of edges" << std::endl;
+                break;
             }
         }
     }
@@ -108,16 +109,17 @@ Graph create_graph(basic_string<char> const &command) {
             vertex = trim(vertex);
             VertexName vertex_name(vertex);
             vertices.insert(vertex_name);
-        } catch(VertexName::InvalidVertexName& name){
-            name.what();
+        } catch(VertexName::InvalidVertexName& error){
+            cout << error.what() << " in list of vertices" << std::endl;
+            break;
         }
     }
 
     try {
         Graph new_graph(vertices, edges);
         return new_graph;
-    } catch(Graph::EdgesHaveVerticesNotInGraph &e){
-        e.what();
+    } catch(Graph::EdgesHaveVerticesNotInGraph &error){
+        cout << error.what() << std::endl;
     }
 }
 
@@ -127,6 +129,7 @@ void mathematicalCommand(std::basic_string<char> const &command){
     int equal_appearance = command.find('=');
     basic_string<char> assignee_graph_name = command.substr(0, equal_appearance);
     assignee_graph_name = trim(assignee_graph_name);
+    checkValidGraphName(assignee_graph_name);
 
     basic_string<char> command_to_calculate = command.substr(equal_appearance + 1, command.size() - equal_appearance);
     command_to_calculate = trim(command_to_calculate);
@@ -228,10 +231,38 @@ int main(int argc, char** argv){
             } catch(UndefinedVariable &error){
                 cout << error.what() << std::endl;
                 continue;
+            } catch(InvalidGraphName &error) {
+                cout << error.what() << std::endl;
+                continue;
             }
         }
     } else if(argc == 3){
-        //TODO go over reading a file
+        std::ifstream input_file;
+        input_file.open(argv[1]);
+
+        std::ofstream output_file;
+        output_file.open(argv[2]);
+//add check if files open correctly
+
+        std::basic_string<char> command;
+        while(input_file.good()){
+            input_file.getline(cin, command);
+            if("quit" == trim(command)){
+                break;
+            }
+            try{
+                read_command(command);
+            } catch(UnrecognizedCommand &error) {
+                output_file << error.what() << std::endl;
+                continue;
+            } catch(UndefinedVariable &error){
+                output_file << error.what() << std::endl;
+                continue;
+            } catch(InvalidGraphName &error) {
+                output_file << error.what() << std::endl;
+                continue;
+            }
+        }
     } else {
         //error
     }

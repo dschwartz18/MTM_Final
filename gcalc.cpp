@@ -40,7 +40,7 @@ Graph calculate(std::basic_string<char> &command) {
         checkGraphVariable(graph_variable);
         return !(symbol_table[graph_variable]);
     } else{
-        basic_string<char> graph_variable_left = trim(command.substr(0, command.find(operation) - 1));
+        basic_string<char> graph_variable_left = trim(command.substr(0, command.find(operation)));
         basic_string<char> graph_variable_right = trim(command.substr(command.find(operation) + 1));
         checkGraphVariable(graph_variable_left);
         checkGraphVariable(graph_variable_right);
@@ -156,7 +156,6 @@ void word_command(std::basic_string<char> const &command, std::ostream &stream){
             throw(UnrecognizedCommand(command));
         }
     }
-    /** who doesnt take any graph var*/
 
     auto command_number = (enumerated_commands)(desired_command-1);
 

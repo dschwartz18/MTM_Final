@@ -58,7 +58,7 @@ Graph calculate(std::basic_string<char> &command) {
 
 Graph create_graph(basic_string<char> const &command) {
     std::set<VertexName> vertices;
-    std::set<std::pair<VertexName, VertexName>> edges;
+    std::set<std::pair<VertexName, VertexName> > edges;
 
     int start = command.find('{');
     int end = command.find('}');
@@ -69,7 +69,7 @@ Graph create_graph(basic_string<char> const &command) {
     basic_string<char> edges_string;
 
     int graph_separator = command.find('|');
-    if (graph_separator == std::string::npos) {
+    if (graph_separator == int(std::string::npos)) {
         vertices_string = new_command;
     } else {
         vertices_string = new_command.substr(0, graph_separator - 1);
@@ -89,7 +89,7 @@ Graph create_graph(basic_string<char> const &command) {
 
             edge = trim(edge);
             int edge_separator = edge.find(',');
-            if (edge_separator == std::string::npos) {
+            if (edge_separator == int(std::string::npos)) {
                 throw (UnrecognizedCommand(command));
             }
             VertexName src_vertex(trim(edge.substr(0, edge_separator)));
@@ -142,8 +142,8 @@ void mathematicalCommand(std::basic_string<char> const &command){
 }
 
 
-void word_command(std::basic_string<char> const &command){
-    std::vector<std::basic_string<char>> word_commands{"delete", "print", "reset", "who", "save", "load"};
+void word_command(std::basic_string<char> const &command, std::ostream &stream){
+    std::vector<std::basic_string<char> > word_commands{"delete", "print", "reset", "who", "save", "load"};
     enum enumerated_commands{delete_enum, print, reset, who, save, load};
     int desired_command = 0;
 
@@ -174,14 +174,14 @@ void word_command(std::basic_string<char> const &command){
             break;
         case who:
             for (auto const& graph_pair: symbol_table) {
-                std::cout << graph_pair.first << std::endl;
+                stream << graph_pair.first << std::endl;
             }
             break;
         case reset:
             symbol_table.clear();
             break;
         case print:
-            std::cout << symbol_table[command_on];
+            stream << symbol_table[command_on];
         case save:
             //TODO
             break;
@@ -193,11 +193,11 @@ void word_command(std::basic_string<char> const &command){
 }
 
 
-void read_command(std::basic_string<char> const &command){
+void read_command(std::basic_string<char> const &command, std::ostream &os){
     if(command.find('=') != std::string::npos){
         mathematicalCommand(command);
     } else {
-        word_command(command);
+        word_command(command, os);
     }
 }
 
@@ -211,7 +211,7 @@ int main(int argc, char** argv){
             getline(cin, command);
 
             try {
-                read_command(command);
+                read_command(command, cout);
             } catch (UnrecognizedCommand &error) {
                 cout << error.what() << std::endl;
                 continue;
@@ -244,7 +244,7 @@ int main(int argc, char** argv){
             getline(input_file, command);
 
             try {
-                read_command(command);
+                read_command(command, output_file);
             } catch (UnrecognizedCommand &error) {
                 output_file << error.what() << std::endl;
                 continue;

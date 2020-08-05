@@ -29,7 +29,7 @@ void checkValidGraphName(std::basic_string<char> &graph_name);
 class UnrecognizedCommand : public std::exception{
     std::basic_string<char> return_message;
 public:
-    ~UnrecognizedCommand() = default;
+    //m~UnrecognizedCommand() = default;
     const char* what() const noexcept override;
     explicit UnrecognizedCommand(const std::basic_string<char>& command);
 };
@@ -37,7 +37,7 @@ public:
 class UndefinedVariable : public std:: exception{
     std::basic_string<char> return_message;
 public:
-    ~UndefinedVariable() = default;
+    //~UndefinedVariable() = default;
     const char* what() const noexcept override;
     explicit UndefinedVariable(const std::basic_string<char>& variable);
 };
@@ -45,7 +45,7 @@ public:
 class InvalidGraphName : public std:: exception{
     std::basic_string<char> return_message;
 public:
-    ~InvalidGraphName() = default;
+    //~InvalidGraphName() = default;
     const char* what() const noexcept override;
     explicit InvalidGraphName(const std::basic_string<char>& graph_name);
 };

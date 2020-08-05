@@ -5,7 +5,7 @@
 #include "Graph.h"
 
 
-Graph::Graph(std::set<VertexName> &vertices_parameter, std::set<std::pair<VertexName,VertexName>> &edges_parameter){
+Graph::Graph(std::set<VertexName> &vertices_parameter, std::set<std::pair<VertexName,VertexName> > &edges_parameter){
     for(auto const & edge: edges_parameter){
         if(vertices_parameter.find(edge.first) == vertices_parameter.end()){
             throw(EdgesHaveVerticesNotInGraph(edge.first, edge));
@@ -21,7 +21,7 @@ Graph::Graph(std::set<VertexName> &vertices_parameter, std::set<std::pair<Vertex
 
 Graph Graph::operator+(Graph const &graph) {
     std::set<VertexName> combined_vertices;
-    std::set<std::pair<VertexName, VertexName>> combined_edges;
+    std::set<std::pair<VertexName, VertexName> > combined_edges;
 
     std::set_union(vertices.begin(), vertices.end(), graph.vertices.begin(), graph.vertices.end(), std::inserter(combined_vertices, combined_vertices.begin()));
     std::set_union(edges.begin(), edges.end(), graph.edges.begin(), graph.edges.end(), std::inserter(combined_edges, combined_edges.begin()));
@@ -33,7 +33,7 @@ Graph Graph::operator+(Graph const &graph) {
 
 Graph Graph::operator^(Graph const &graph) {
     std::set<VertexName> intersection_vertices;
-    std::set<std::pair<VertexName, VertexName>> intersection_edges;
+    std::set<std::pair<VertexName, VertexName> > intersection_edges;
 
     std::set_intersection(vertices.begin(), vertices.end(), graph.vertices.begin(), graph.vertices.end(), std::inserter(intersection_vertices, intersection_vertices.begin()));
     std::set_intersection(edges.begin(), edges.end(), graph.edges.begin(), graph.edges.end(), std::inserter(intersection_edges, intersection_edges.begin()));
@@ -45,7 +45,7 @@ Graph Graph::operator^(Graph const &graph) {
 
 Graph Graph::operator-(Graph const &graph) {
     std::set<VertexName> subtracted_vertices;
-    std::set<std::pair<VertexName, VertexName>> subtracted_edges = edges;
+    std::set<std::pair<VertexName, VertexName> > subtracted_edges = edges;
 
     std::set_difference(vertices.begin(), vertices.end(), graph.vertices.begin(), graph.vertices.end(), std::inserter(subtracted_vertices, subtracted_vertices.begin()));
 
@@ -62,7 +62,7 @@ Graph Graph::operator-(Graph const &graph) {
 
 Graph Graph::operator*(Graph const &graph) {
     std::set<VertexName> multiplied_vertices;
-    std::set<std::pair<VertexName, VertexName>> multiplied_edges;
+    std::set<std::pair<VertexName, VertexName> > multiplied_edges;
 
     for(const auto & vertex1 : vertices){
         for(const auto & vertex2 : vertices){
@@ -82,7 +82,7 @@ Graph Graph::operator*(Graph const &graph) {
 
 Graph Graph::operator!() {
     std::set<VertexName> complement_vertices = vertices;
-    std::set<std::pair<VertexName, VertexName>> complement_edges;
+    std::set<std::pair<VertexName, VertexName> > complement_edges;
     Graph full_graph;
     full_graph = fullGraph(vertices);
 
@@ -94,7 +94,7 @@ Graph Graph::operator!() {
 
 
 Graph Graph::fullGraph(std::set<VertexName> vertices) {
-    std::set<std::pair<VertexName, VertexName>> edges;
+    std::set<std::pair<VertexName, VertexName> > edges;
 
     for(auto src_vertex = vertices.begin(); src_vertex != vertices.end(); ++src_vertex){
         for(auto dest_vertex = vertices.begin(); dest_vertex != vertices.end(); ++dest_vertex){

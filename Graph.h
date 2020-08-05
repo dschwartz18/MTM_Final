@@ -11,16 +11,17 @@
 #include <set>
 #include <map>
 #include <utility>
+#include <algorithm>
 
 class Graph{
     std::set<VertexName> vertices;
-    std::set<std::pair<VertexName, VertexName>> edges;
+    std::set<std::pair<VertexName, VertexName> > edges;
 
     static Graph fullGraph(std::set<VertexName> vertices);
 
 public:
     Graph() = default;
-    Graph(std::set<VertexName> &vertices_parameter, std::set<std::pair<VertexName,VertexName>> &edges_parameter);
+    Graph(std::set<VertexName> &vertices_parameter, std::set<std::pair<VertexName,VertexName> > &edges_parameter);
     ~Graph() = default;
     Graph(Graph const &graph) = default;
     Graph& operator=(Graph const &graph) = default;
@@ -38,7 +39,7 @@ public:
 
     public:
         explicit EdgesHaveVerticesNotInGraph(const VertexName &vertex, const std::pair<VertexName,VertexName> &edge);
-        ~EdgesHaveVerticesNotInGraph() = default;
+        //~EdgesHaveVerticesNotInGraph() = default;
         const char* what() const noexcept override;
     };
 

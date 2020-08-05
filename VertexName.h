@@ -30,7 +30,7 @@ public:
 
     public:
         explicit InvalidVertexName(const std::basic_string<char>& v_name);
-        ~InvalidVertexName() = default;
+        //~InvalidVertexName() = default;
         const char* what() const noexcept override;
     };
 

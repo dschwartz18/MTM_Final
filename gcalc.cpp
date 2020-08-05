@@ -31,9 +31,13 @@ Graph calculate(std::basic_string<char> &command) {
             break;
         }
     }
+    if(operation == 0){
+        checkGraphVariable(trim(command));
+        return symbol_table[trim(command)];
+    }
 
     if(operation == '!'){
-        basic_string<char> graph_variable = trim(command.substr(0, command.find(operation) - 1));
+        basic_string<char> graph_variable = trim(command.substr(0, command.find(operation)));
         if((command.substr(command.find(operation)).length() > 1)){
             throw(UnrecognizedCommand(command));
         }

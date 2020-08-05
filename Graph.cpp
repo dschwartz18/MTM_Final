@@ -65,14 +65,14 @@ Graph Graph::operator*(Graph const &graph) {
     std::set<std::pair<VertexName, VertexName> > multiplied_edges;
 
     for(const auto & vertex1 : vertices){
-        for(const auto & vertex2 : vertices){
+        for(const auto & vertex2 : graph.vertices){
             VertexName multiplied_vertex = (vertex1*vertex2);
             multiplied_vertices.insert(multiplied_vertex);
         }
     }
 
     for(const auto & edge1 : edges){
-        for(const auto & edge2 : edges){
+        for(const auto & edge2 : graph.edges){
             multiplied_edges.insert(std::pair<VertexName,VertexName>((edge1.first*edge2.first),(edge1.second*edge2.second)));
         }
     }

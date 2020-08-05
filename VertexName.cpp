@@ -21,18 +21,28 @@ bool VertexName::checkValid(std::basic_string<char> const &name) {
             return false;
         }
         switch(name[character_number]){
-            case '(': parenthesesCounter++;
-            case ')': parenthesesCounter--;
-            case '[': bracketCounter++;
-            case ']': bracketCounter--;
+            case '(':
+                parenthesesCounter++;
+                break;
+            case ')':
+                parenthesesCounter--;
+                break;
+            case '[':
+                bracketCounter++;
+                break;
+            case ']':
+                bracketCounter--;
+                break;
             case ';':
-                if(bracketCounter > 0){
+                if(bracketCounter == 0){
                     return false;
                 }
+                break;
             default:
                 if(!(std::isalpha(name[character_number]) || std::isdigit(name[character_number]))){
                     return false;
                 }
+                break;
         }
         if(parenthesesCounter < 0 || bracketCounter < 0){
             return false;

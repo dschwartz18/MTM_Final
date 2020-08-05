@@ -14,6 +14,8 @@ using std::basic_string;
 //global symbol table
 std::map<std::basic_string<char>, Graph> symbol_table;
 
+//global bool, true=command-line false=batch
+bool command_or_batch;
 
 void checkGraphVariable(basic_string<char> const &graph_variable){
     if (symbol_table.count(graph_variable) != 1){
@@ -60,26 +62,26 @@ Graph create_graph(basic_string<char> const &command) {
 
     int start = command.find('{');
     int end = command.find('}');
-    basic_string<char> new_command = command.substr(start+1, end-start-1);
+    basic_string<char> new_command = command.substr(start + 1, end - start - 1);
 
 
     basic_string<char> vertices_string;
     basic_string<char> edges_string;
 
     int graph_separator = command.find('|');
-    if(graph_separator == std::string::npos){
+    if (graph_separator == std::string::npos) {
         vertices_string = new_command;
     } else {
         vertices_string = new_command.substr(0, graph_separator - 1);
-        edges_string =  trim(new_command.substr(graph_separator));
+        edges_string = trim(new_command.substr(graph_separator));
 
-        while(edges_string.length() != 0){
+        while (edges_string.length() != 0) {
             start = edges_string.find('<');
             end = edges_string.find('>');
 
             basic_string<char> edge = edges_string.substr(start + 1, end - start - 1);
             int first_comma = edges_string.find(',');
-            if(first_comma < start && first_comma != -1){
+            if (first_comma < start && first_comma != -1) {
                 start = first_comma;
             }
             edges_string.erase(start, end - start + 1);
@@ -87,40 +89,26 @@ Graph create_graph(basic_string<char> const &command) {
 
             edge = trim(edge);
             int edge_separator = edge.find(',');
-            if(edge_separator == std::string::npos){
-                throw(UnrecognizedCommand(command));
+            if (edge_separator == std::string::npos) {
+                throw (UnrecognizedCommand(command));
             }
-            try{
-                VertexName src_vertex(trim(edge.substr(0, edge_separator)));
-                VertexName dest_vertex(trim(edge.substr(edge_separator+1)));
-                edges.insert(std::pair<VertexName,VertexName>(src_vertex, dest_vertex));
-            } catch(VertexName::InvalidVertexName& error){
-                cout << error.what() << " in list of edges" << std::endl;
-                break;
-            }
+            VertexName src_vertex(trim(edge.substr(0, edge_separator)));
+            VertexName dest_vertex(trim(edge.substr(edge_separator + 1)));
+            edges.insert(std::pair<VertexName, VertexName>(src_vertex, dest_vertex));
         }
     }
-
-    std::stringstream vertices_stream(vertices_string);
-    while(vertices_stream.good()) {
-        basic_string<char> vertex;
-        getline(vertices_stream, vertex, ',');
-        try{
+        std::stringstream vertices_stream(vertices_string);
+        while (vertices_stream.good()) {
+            basic_string<char> vertex;
+            getline(vertices_stream, vertex, ',');
             vertex = trim(vertex);
             VertexName vertex_name(vertex);
             vertices.insert(vertex_name);
-        } catch(VertexName::InvalidVertexName& error){
-            cout << error.what() << " in list of vertices" << std::endl;
-            break;
         }
-    }
 
-    try {
         Graph new_graph(vertices, edges);
         return new_graph;
-    } catch(Graph::EdgesHaveVerticesNotInGraph &error){
-        cout << error.what() << std::endl;
-    }
+
 }
 
 void mathematicalCommand(std::basic_string<char> const &command){
@@ -216,27 +204,34 @@ void read_command(std::basic_string<char> const &command){
 int main(int argc, char** argv){
 
     if(argc == 1){
+        command_or_batch = true;
         std::basic_string<char> command;
-        while(true){
+        while("quit" != trim(command)) {
             cout << "Gcalc> ";
             getline(cin, command);
-            if("quit" == trim(command)){
-                break;
-            }
-            try{
+
+            try {
                 read_command(command);
-            } catch(UnrecognizedCommand &error) {
+            } catch (UnrecognizedCommand &error) {
                 cout << error.what() << std::endl;
                 continue;
-            } catch(UndefinedVariable &error){
+            } catch (UndefinedVariable &error) {
                 cout << error.what() << std::endl;
                 continue;
-            } catch(InvalidGraphName &error) {
+            } catch (InvalidGraphName &error) {
+                cout << error.what() << std::endl;
+                continue;
+            } catch (VertexName::InvalidVertexName &error) {
+                cout << error.what() << std::endl;
+                continue;
+            } catch(Graph::EdgesHaveVerticesNotInGraph &error){
                 cout << error.what() << std::endl;
                 continue;
             }
         }
     } else if(argc == 3){
+        command_or_batch = false;
+
         std::ifstream input_file;
         input_file.open(argv[1]);
 
@@ -245,23 +240,28 @@ int main(int argc, char** argv){
 //add check if files open correctly
 
         std::basic_string<char> command;
-        while(input_file.good()){
-            input_file.getline(cin, command);
-            if("quit" == trim(command)){
-                break;
-            }
-            try{
+        while(input_file.good() && "quit" != trim(command)){
+            getline(input_file, command);
+
+            try {
                 read_command(command);
-            } catch(UnrecognizedCommand &error) {
+            } catch (UnrecognizedCommand &error) {
                 output_file << error.what() << std::endl;
                 continue;
-            } catch(UndefinedVariable &error){
+            } catch (UndefinedVariable &error) {
                 output_file << error.what() << std::endl;
                 continue;
-            } catch(InvalidGraphName &error) {
+            } catch (InvalidGraphName &error) {
+                output_file << error.what() << std::endl;
+                continue;
+            } catch (VertexName::InvalidVertexName &error) {
+                output_file << error.what() << std::endl;
+                continue;
+            } catch(Graph::EdgesHaveVerticesNotInGraph &error){
                 output_file << error.what() << std::endl;
                 continue;
             }
+
         }
     } else {
         //error

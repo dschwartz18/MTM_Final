@@ -10,12 +10,8 @@ using std::cin;
 using std::basic_string;
 
 
-
 //global symbol table
 std::map<std::basic_string<char>, Graph> symbol_table;
-
-//global bool, true=command-line false=batch
-bool command_or_batch;
 
 void checkGraphVariable(basic_string<char> const &graph_variable){
     if (symbol_table.count(graph_variable) != 1){
@@ -23,6 +19,50 @@ void checkGraphVariable(basic_string<char> const &graph_variable){
     }
 }
 
+Graph calculatePolishNotation(std::queue<std::string> &rpolish_queue){
+    Graph calculated_graph;
+    std::string calculated_graph_name = "_graph";
+    symbol_table[calculated_graph_name] = calculated_graph;
+    std::stack<std::string> calculation_stack;
+
+    while(!rpolish_queue.empty()){
+        //cout << "Current queue front: " << rpolish_queue.front() << std::endl;
+
+        if(isalpha(rpolish_queue.front()[0])){
+            calculation_stack.push(rpolish_queue.front());
+            rpolish_queue.pop();
+        } else if(rpolish_queue.front()[0] == '!') {
+            checkGraphVariable(calculation_stack.top());
+            symbol_table[calculated_graph_name] = !(symbol_table[calculation_stack.top()]);
+            calculation_stack.pop();
+            calculation_stack.push(calculated_graph_name);
+            rpolish_queue.pop();
+        } else {
+            checkGraphVariable(calculation_stack.top());
+            Graph right_side = symbol_table[calculation_stack.top()];
+            calculation_stack.pop();
+
+            checkGraphVariable(calculation_stack.top());
+            Graph left_side = symbol_table[calculation_stack.top()];
+            calculation_stack.pop();
+
+            symbol_table[calculated_graph_name] = left_side + right_side;
+
+            calculation_stack.push(calculated_graph_name);
+            rpolish_queue.pop();
+        }
+    }
+    calculated_graph = symbol_table[calculated_graph_name];
+    symbol_table.erase(calculated_graph_name);
+
+    return calculated_graph;
+}
+
+Graph calculate(std::basic_string<char> &command){
+    std::queue<basic_string<char> > command_reverse_polish_notation = reversePolishNotation(command);
+    return calculatePolishNotation(command_reverse_polish_notation);
+}
+/*
 Graph calculate(std::basic_string<char> &command) {
     char operation = 0;
     for(auto const& character : command){
@@ -58,7 +98,7 @@ Graph calculate(std::basic_string<char> &command) {
         }
     }
 }
-
+*/
 
 Graph create_graph(basic_string<char> const &command) {
     std::set<VertexName> vertices;
@@ -207,7 +247,6 @@ void read_command(std::basic_string<char> const &command, std::ostream &os){
 int main(int argc, char** argv){
 
     if(argc == 1){
-        command_or_batch = true;
         std::basic_string<char> command;
         while("quit" != trim(command)) {
             cout << "Gcalc> ";
@@ -233,7 +272,6 @@ int main(int argc, char** argv){
             }
         }
     } else if(argc == 3){
-        command_or_batch = false;
 
         std::ifstream input_file;
         input_file.open(argv[1]);
@@ -267,6 +305,6 @@ int main(int argc, char** argv){
 
         }
     } else {
-        //error
+        std::cerr << "Wrong amount of arguments";
     }
 }

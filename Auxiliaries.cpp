@@ -42,7 +42,7 @@ void checkValidGraphName(std::basic_string<char> &graph_name){
     }
 }
 
-//returns
+
 std::queue<std::basic_string<char> > reversePolishNotation(std::basic_string<char> command){
     std::list<std::string> tokens_list;
     std::queue<std::string> output_queue;
@@ -76,13 +76,15 @@ std::queue<std::basic_string<char> > reversePolishNotation(std::basic_string<cha
             output_queue.push(current_token);
         } else if(current_token[0] == '!' || current_token[0] == '('){
            operator_stack.push(current_token);
-        } else if (current_token[0] != ')'){
-            if(!operator_stack.empty() && operator_stack.top()[0] == '!'){
-                output_queue.push(operator_stack.top());
-                operator_stack.pop();
+        } else if (current_token[0] != ')') {
+            if(!operator_stack.empty()) {
+                if ((operator_stack.top()[0] == '!' || !(operator_stack.top()[0] == '('))) {
+                    output_queue.push(operator_stack.top());
+                    operator_stack.pop();
+                }
             }
             operator_stack.push(current_token);
-        } else if (current_token[0] == ')'){
+        }  else if (current_token[0] == ')'){
             while(operator_stack.top()[0] != '('){
                 output_queue.push(operator_stack.top());
                 operator_stack.pop();

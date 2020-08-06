@@ -2,7 +2,6 @@
 // Created by Dan Schwartz on 8/3/20.
 //
 
-
 #include "Auxiliaries.h"
 
 using std::cout;
@@ -15,19 +14,21 @@ std::map<std::basic_string<char>, Graph> symbol_table;
 
 void checkGraphVariable(basic_string<char> const &graph_variable){
     if (symbol_table.count(graph_variable) != 1){
+        if (symbol_table.count("_graph") > 0) {
+            symbol_table.erase("_graph");
+
+        }
         throw(UndefinedVariable(graph_variable));
     }
 }
 
-Graph calculatePolishNotation(std::queue<std::string> &rpolish_queue){
+Graph calculatePolishNotation(std::queue<std::string> &rpolish_queue, std::string &command){
     Graph calculated_graph;
     std::string calculated_graph_name = "_graph";
     symbol_table[calculated_graph_name] = calculated_graph;
     std::stack<std::string> calculation_stack;
 
     while(!rpolish_queue.empty()){
-        //cout << "Current queue front: " << rpolish_queue.front() << std::endl;
-
         if(isalpha(rpolish_queue.front()[0])){
             calculation_stack.push(rpolish_queue.front());
             rpolish_queue.pop();
@@ -46,59 +47,30 @@ Graph calculatePolishNotation(std::queue<std::string> &rpolish_queue){
             Graph left_side = symbol_table[calculation_stack.top()];
             calculation_stack.pop();
 
-            symbol_table[calculated_graph_name] = left_side + right_side;
+            switch(rpolish_queue.front()[0]){
+                case '+': symbol_table[calculated_graph_name] = left_side + right_side; break;
+                case '^': symbol_table[calculated_graph_name] = left_side ^ right_side; break;
+                case '*': symbol_table[calculated_graph_name] = left_side * right_side; break;
+                case '-': symbol_table[calculated_graph_name] = left_side - right_side; break;
+                default: throw(UnrecognizedCommand(command));
+            }
 
             calculation_stack.push(calculated_graph_name);
             rpolish_queue.pop();
         }
     }
-    calculated_graph = symbol_table[calculated_graph_name];
+    Graph return_graph = symbol_table[calculated_graph_name];
     symbol_table.erase(calculated_graph_name);
 
-    return calculated_graph;
+    return return_graph;
 }
 
-Graph calculate(std::basic_string<char> &command){
+
+Graph calculate(std::string &command){
     std::queue<basic_string<char> > command_reverse_polish_notation = reversePolishNotation(command);
-    return calculatePolishNotation(command_reverse_polish_notation);
+    return calculatePolishNotation(command_reverse_polish_notation, command);
 }
-/*
-Graph calculate(std::basic_string<char> &command) {
-    char operation = 0;
-    for(auto const& character : command){
-        if(ispunct(character)){
-            operation = character;
-            break;
-        }
-    }
-    if(operation == 0){
-        checkGraphVariable(trim(command));
-        return symbol_table[trim(command)];
-    }
 
-    if(operation == '!'){
-        basic_string<char> graph_variable = trim(command.substr(0, command.find(operation)));
-        if((command.substr(command.find(operation)).length() > 1)){
-            throw(UnrecognizedCommand(command));
-        }
-        checkGraphVariable(graph_variable);
-        return !(symbol_table[graph_variable]);
-    } else{
-        basic_string<char> graph_variable_left = trim(command.substr(0, command.find(operation)));
-        basic_string<char> graph_variable_right = trim(command.substr(command.find(operation) + 1));
-        checkGraphVariable(graph_variable_left);
-        checkGraphVariable(graph_variable_right);
-
-        switch(operation){
-            case '+': return (symbol_table[graph_variable_left] + symbol_table[graph_variable_right]);
-            case '^': return (symbol_table[graph_variable_left] ^ symbol_table[graph_variable_right]);
-            case '-': return (symbol_table[graph_variable_left] - symbol_table[graph_variable_right]);
-            case '*': return (symbol_table[graph_variable_left] * symbol_table[graph_variable_right]);
-            default: throw(UnrecognizedCommand(command));
-        }
-    }
-}
-*/
 
 Graph create_graph(basic_string<char> const &command) {
     std::set<VertexName> vertices;
@@ -152,8 +124,8 @@ Graph create_graph(basic_string<char> const &command) {
 
         Graph new_graph(vertices, edges);
         return new_graph;
-
 }
+
 
 void mathematicalCommand(std::basic_string<char> const &command){
     Graph calculated_graph;
@@ -184,6 +156,7 @@ void mathematicalCommand(std::basic_string<char> const &command){
     }
     symbol_table[assignee_graph_name] = calculated_graph;
 }
+
 
 
 void word_command(std::basic_string<char> const &command, std::ostream &stream){

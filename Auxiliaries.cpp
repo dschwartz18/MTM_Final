@@ -42,6 +42,64 @@ void checkValidGraphName(std::basic_string<char> &graph_name){
     }
 }
 
+
+std::queue<std::basic_string<char> > reversePolishNotation(std::basic_string<char> command){
+    std::list<std::string> tokens_list;
+    std::queue<std::string> output_queue;
+    std::stack<std::string> operator_stack;
+
+    //tokenize and put into a list
+    while(command.length() > 0){
+        int character_number;
+        for(character_number = 0; character_number < int(command.length()); ++character_number) {
+            if (ispunct(command[character_number])) {
+                break;
+            }
+        }
+        if(character_number > 0){
+            tokens_list.push_back(trim(command.substr(0, character_number)));
+        }
+        if(command.substr(character_number, 1).length() > 0){
+            tokens_list.push_back(command.substr(character_number, 1));
+        }
+
+        command.erase(0, character_number + 1);
+        command = trim(command);
+    }
+
+    while(!tokens_list.empty()){
+        std::string current_token = tokens_list.front();
+        tokens_list.pop_front();
+
+        //if its a graph
+        if(isalpha(current_token[0])){
+            output_queue.push(current_token);
+        } else if(current_token[0] == '!' || current_token[0] == '('){
+           operator_stack.push(current_token);
+        } else if (current_token[0] != ')') {
+            if(!operator_stack.empty()) {
+                if ((operator_stack.top()[0] == '!' || !(operator_stack.top()[0] == '('))) {
+                    output_queue.push(operator_stack.top());
+                    operator_stack.pop();
+                }
+            }
+            operator_stack.push(current_token);
+        }  else if (current_token[0] == ')'){
+            while(operator_stack.top()[0] != '('){
+                output_queue.push(operator_stack.top());
+                operator_stack.pop();
+            }
+            operator_stack.pop();
+        }
+    }
+    while(!operator_stack.empty()){
+        output_queue.push(operator_stack.top());
+        operator_stack.pop();
+    }
+
+    return output_queue;
+}
+
 /**-------------------Error classes--------------------*/
 
 const char *UnrecognizedCommand::what() const noexcept {

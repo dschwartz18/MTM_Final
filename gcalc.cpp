@@ -2,7 +2,6 @@
 // Created by Dan Schwartz on 8/3/20.
 //
 
-
 #include "Auxiliaries.h"
 
 using std::cout;
@@ -10,53 +9,66 @@ using std::cin;
 using std::basic_string;
 
 
-
 //global symbol table
 std::map<std::basic_string<char>, Graph> symbol_table;
 
-//global bool, true=command-line false=batch
-bool command_or_batch;
-
 void checkGraphVariable(basic_string<char> const &graph_variable){
     if (symbol_table.count(graph_variable) != 1){
+        if (symbol_table.count("_graph") > 0) {
+            symbol_table.erase("_graph");
+
+        }
         throw(UndefinedVariable(graph_variable));
     }
 }
 
-Graph calculate(std::basic_string<char> &command) {
-    char operation = 0;
-    for(auto const& character : command){
-        if(ispunct(character)){
-            operation = character;
-            break;
-        }
-    }
-    if(operation == 0){
-        checkGraphVariable(trim(command));
-        return symbol_table[trim(command)];
-    }
+Graph calculatePolishNotation(std::queue<std::string> &rpolish_queue, std::string &command){
+    Graph calculated_graph;
+    std::string calculated_graph_name = "_graph";
+    symbol_table[calculated_graph_name] = calculated_graph;
+    std::stack<std::string> calculation_stack;
 
-    if(operation == '!'){
-        basic_string<char> graph_variable = trim(command.substr(0, command.find(operation)));
-        if((command.substr(command.find(operation)).length() > 1)){
-            throw(UnrecognizedCommand(command));
-        }
-        checkGraphVariable(graph_variable);
-        return !(symbol_table[graph_variable]);
-    } else{
-        basic_string<char> graph_variable_left = trim(command.substr(0, command.find(operation)));
-        basic_string<char> graph_variable_right = trim(command.substr(command.find(operation) + 1));
-        checkGraphVariable(graph_variable_left);
-        checkGraphVariable(graph_variable_right);
+    while(!rpolish_queue.empty()){
+        if(isalpha(rpolish_queue.front()[0])){
+            calculation_stack.push(rpolish_queue.front());
+            rpolish_queue.pop();
+        } else if(rpolish_queue.front()[0] == '!') {
+            checkGraphVariable(calculation_stack.top());
+            symbol_table[calculated_graph_name] = !(symbol_table[calculation_stack.top()]);
+            calculation_stack.pop();
+            calculation_stack.push(calculated_graph_name);
+            rpolish_queue.pop();
+        } else {
+            checkGraphVariable(calculation_stack.top());
+            Graph right_side = symbol_table[calculation_stack.top()];
+            calculation_stack.pop();
 
-        switch(operation){
-            case '+': return (symbol_table[graph_variable_left] + symbol_table[graph_variable_right]);
-            case '^': return (symbol_table[graph_variable_left] ^ symbol_table[graph_variable_right]);
-            case '-': return (symbol_table[graph_variable_left] - symbol_table[graph_variable_right]);
-            case '*': return (symbol_table[graph_variable_left] * symbol_table[graph_variable_right]);
-            default: throw(UnrecognizedCommand(command));
+            checkGraphVariable(calculation_stack.top());
+            Graph left_side = symbol_table[calculation_stack.top()];
+            calculation_stack.pop();
+
+            switch(rpolish_queue.front()[0]){
+                case '+': symbol_table[calculated_graph_name] = left_side + right_side; break;
+                case '^': symbol_table[calculated_graph_name] = left_side ^ right_side; break;
+                case '*': symbol_table[calculated_graph_name] = left_side * right_side; break;
+                case '-': symbol_table[calculated_graph_name] = left_side - right_side; break;
+                default: throw(UnrecognizedCommand(command));
+            }
+
+            calculation_stack.push(calculated_graph_name);
+            rpolish_queue.pop();
         }
     }
+    Graph return_graph = symbol_table[calculated_graph_name];
+    symbol_table.erase(calculated_graph_name);
+
+    return return_graph;
+}
+
+
+Graph calculate(std::string &command){
+    std::queue<basic_string<char> > command_reverse_polish_notation = reversePolishNotation(command);
+    return calculatePolishNotation(command_reverse_polish_notation, command);
 }
 
 
@@ -112,8 +124,8 @@ Graph create_graph(basic_string<char> const &command) {
 
         Graph new_graph(vertices, edges);
         return new_graph;
-
 }
+
 
 void mathematicalCommand(std::basic_string<char> const &command){
     Graph calculated_graph;
@@ -144,6 +156,7 @@ void mathematicalCommand(std::basic_string<char> const &command){
     }
     symbol_table[assignee_graph_name] = calculated_graph;
 }
+
 
 
 void word_command(std::basic_string<char> const &command, std::ostream &stream){
@@ -207,7 +220,6 @@ void read_command(std::basic_string<char> const &command, std::ostream &os){
 int main(int argc, char** argv){
 
     if(argc == 1){
-        command_or_batch = true;
         std::basic_string<char> command;
         while("quit" != trim(command)) {
             cout << "Gcalc> ";
@@ -233,7 +245,6 @@ int main(int argc, char** argv){
             }
         }
     } else if(argc == 3){
-        command_or_batch = false;
 
         std::ifstream input_file;
         input_file.open(argv[1]);
@@ -267,6 +278,6 @@ int main(int argc, char** argv){
 
         }
     } else {
-        //error
+        std::cerr << "Wrong amount of arguments";
     }
 }

@@ -244,7 +244,6 @@ void clearTempGraphs(){
             toDelete.push_back(graph.first);
         }
     }
-
     for(auto const & temp_graph : toDelete){
         symbol_table.erase(temp_graph);
     }
@@ -364,11 +363,11 @@ int main(int argc, char** argv){
                 continue;
             } catch(UnableToLoadGraph &error){
                 clearTempGraphs();
-                cout << error.what() << std::endl;
+                output_file << error.what() << std::endl;
                 continue;
             } catch(UnableToSaveGraph &error){
                 clearTempGraphs();
-                cout << error.what() << std::endl;
+                output_file << error.what() << std::endl;
                 continue;
             }
         }

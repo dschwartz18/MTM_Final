@@ -11,6 +11,7 @@ using std::basic_string;
 
 //global symbol table
 std::map<std::basic_string<char>, Graph> symbol_table;
+std::string original_command;
 
 void checkGraphVariable(basic_string<char> const &graph_variable){
     if (symbol_table.count(graph_variable) != 1){
@@ -22,11 +23,16 @@ void checkGraphVariable(basic_string<char> const &graph_variable){
     }
 }
 
-Graph calculatePolishNotation(std::queue<std::string> &rpolish_queue, std::string &command){
+Graph calculatePolishNotation(std::queue<std::string> &rpolish_queue){
+    if(rpolish_queue.size() == 1){
+        return symbol_table[rpolish_queue.front()];
+    }
+
     Graph calculated_graph;
     std::string calculated_graph_name = "_graph";
     symbol_table[calculated_graph_name] = calculated_graph;
     std::stack<std::string> calculation_stack;
+
 
     while(!rpolish_queue.empty()){
         if(isalpha(rpolish_queue.front()[0])){
@@ -52,7 +58,7 @@ Graph calculatePolishNotation(std::queue<std::string> &rpolish_queue, std::strin
                 case '^': symbol_table[calculated_graph_name] = left_side ^ right_side; break;
                 case '*': symbol_table[calculated_graph_name] = left_side * right_side; break;
                 case '-': symbol_table[calculated_graph_name] = left_side - right_side; break;
-                default: throw(UnrecognizedCommand(command));
+                default: throw(UnrecognizedCommand(original_command));
             }
 
             calculation_stack.push(calculated_graph_name);
@@ -66,9 +72,9 @@ Graph calculatePolishNotation(std::queue<std::string> &rpolish_queue, std::strin
 }
 
 
-Graph calculate(std::string &command){
+Graph calculate(std::vector<std::string> &command){
     std::queue<basic_string<char> > command_reverse_polish_notation = reversePolishNotation(command);
-    return calculatePolishNotation(command_reverse_polish_notation, command);
+    return calculatePolishNotation(command_reverse_polish_notation);
 }
 
 
@@ -76,24 +82,19 @@ Graph create_graph(basic_string<char> const &command) {
     std::set<VertexName> vertices;
     std::set<std::pair<VertexName, VertexName> > edges;
 
-    int start = command.find('{');
-    int end = command.find('}');
-    basic_string<char> new_command = command.substr(start + 1, end - start - 1);
-
-
     basic_string<char> vertices_string;
     basic_string<char> edges_string;
 
     int graph_separator = command.find('|');
     if (graph_separator == int(std::string::npos)) {
-        vertices_string = new_command;
+        vertices_string = command;
     } else {
-        vertices_string = new_command.substr(0, graph_separator - 1);
-        edges_string = trim(new_command.substr(graph_separator));
+        vertices_string = command.substr(0, graph_separator);
+        edges_string = trim(command.substr(graph_separator + 1));
 
         while (edges_string.length() != 0) {
-            start = edges_string.find('<');
-            end = edges_string.find('>');
+            int start = edges_string.find('<');
+            int end = edges_string.find('>');
 
             basic_string<char> edge = edges_string.substr(start + 1, end - start - 1);
             int first_comma = edges_string.find(',');
@@ -127,95 +128,151 @@ Graph create_graph(basic_string<char> const &command) {
 }
 
 
-void mathematicalCommand(std::basic_string<char> const &command){
-    Graph calculated_graph;
 
-    int equal_appearance = command.find('=');
-    basic_string<char> assignee_graph_name = command.substr(0, equal_appearance);
-    assignee_graph_name = trim(assignee_graph_name);
-    checkValidGraphName(assignee_graph_name);
 
-    basic_string<char> command_to_calculate = command.substr(equal_appearance + 1, command.size() - equal_appearance);
-    command_to_calculate = trim(command_to_calculate);
+std::string removeLiteralsAndLoad(std::basic_string<char> command){
+    while(containsGraphLiteral(command)){
+        int counter = 0;
+        ++counter;
+        std::string graph_literal = findGraphLiteral(command);
+        Graph temp = create_graph(graph_literal);
 
-    int matching_parentheses = 0;
+        std::string const temp_graph_name = "TEMP" + std::to_string(counter);
+        symbol_table[temp_graph_name] = temp;
 
-    if(command_to_calculate.find('{') != std::string::npos){
-        matching_parentheses++;
-        if(command_to_calculate.find('}') != std::string::npos){
-            matching_parentheses++;
-            if((command_to_calculate.find('}') - command_to_calculate.find('{') + 1) == command_to_calculate.length()){
-                calculated_graph = create_graph(command_to_calculate);
-            }
-        }
-    } else{
-        calculated_graph = calculate(command_to_calculate);
+        command.replace(command.find('{'), command.find('}')-command.find('{')+1, temp_graph_name);
     }
-    if(matching_parentheses == 1){
-        throw(UnrecognizedCommand(command));
+
+    while(containsLoad(command)){
+        int counter = 0;
+        ++counter;
+        std::string load_command = findLoad(command);
+        std::string file_to_load = findFileInLoad(load_command);
+        Graph temp = loadGraph(file_to_load);
+
+        std::string const temp_graph_name = "TEMPP" + std::to_string(counter);
+        symbol_table[temp_graph_name] = temp;
+
+        command.replace(command.find("load"), load_command.length(), temp_graph_name);
     }
-    symbol_table[assignee_graph_name] = calculated_graph;
+    return command;
 }
 
+std::vector<std::string> checkParenthesesAndFindRest(std::vector<std::string> command_vector){
+    std::string first = *(command_vector.begin());
+    std::string last = *(command_vector.rbegin());
 
+    if(first[0] != '(' || last[0] != ')'){
+        throw(UnrecognizedCommand(original_command));
+    } else {
+        command_vector.erase(command_vector.begin());
+        command_vector.pop_back();
+    }
 
-void word_command(std::basic_string<char> const &command, std::ostream &stream){
-    std::vector<std::basic_string<char> > word_commands{"delete", "print", "reset", "who", "save", "load"};
-    enum enumerated_commands{delete_enum, print, reset, who, save, load};
-    int desired_command = 0;
+    return command_vector;
+}
 
-    for(auto &word_command : word_commands){
-        desired_command++;
-        if(command.find(word_command) != std::string::npos){
-            break;
-        }
-        if(desired_command == 7){
-            throw(UnrecognizedCommand(command));
+std::vector<std::string> findGraph(std::vector<std::string> command_vector){
+    command_vector.erase(find(command_vector.begin(), command_vector.end(), ","), command_vector.end());
+    return command_vector;
+}
+
+std::string findAndCheckFileName(std::vector<std::string> command_vector){
+    if(find(command_vector.begin(), command_vector.end(), ",") == command_vector.end()){
+        throw(UnrecognizedCommand(original_command));
+    }
+
+    command_vector.erase(command_vector.begin(), find(command_vector.begin(), command_vector.end(), ","));
+    command_vector.erase(command_vector.begin());
+    std::string file_name;
+
+    for(auto const & token : command_vector){
+        file_name += token;
+    }
+
+    for(auto const & character : file_name){
+        if(character == '(' || character == ')' || character == ','){
+            //TODO make new error invalid file name
+            throw(UnrecognizedCommand(original_command));
         }
     }
 
-    auto command_number = (enumerated_commands)(desired_command-1);
+    return file_name;
+}
 
-    int command_on_start = command.find('(');
-    int command_on_end = command.rfind(')');
+void wordCommand(std::vector<std::string> &command_vector, std::ostream &stream){
+    std::string key_word = findKeyWord(command_vector);
+    command_vector.erase(command_vector.begin());
 
-    std::basic_string<char> command_on = command.substr(command_on_start + 1, (command_on_end-command_on_start) - 1);
-    if(desired_command < 3){
-        command_on = trim(command_on);
-        checkGraphVariable(command_on);
-    }
-    switch(command_number){
-        case delete_enum:
-            symbol_table.erase(command_on);
-            break;
-        case who:
+    if(command_vector.empty()){
+        if(key_word == "who"){
             for (auto const& graph_pair: symbol_table) {
                 stream << graph_pair.first << std::endl;
             }
-            break;
-        case reset:
+        } else if (key_word == "reset") {
             symbol_table.clear();
-            break;
-        case print:
-            stream << symbol_table[command_on];
-        case save:
-            //TODO
-            break;
-        case load:
-            break;
-        default:
-            break;
-    }
-}
-
-
-void read_command(std::basic_string<char> const &command, std::ostream &os){
-    if(command.find('=') != std::string::npos){
-        mathematicalCommand(command);
+        } else {
+            throw(UnrecognizedCommand(original_command));
+        }
     } else {
-        word_command(command, os);
+        std::vector<std::string> withoutParentheses = checkParenthesesAndFindRest(command_vector);
+        if(key_word == "save"){
+            std::vector<std::string> graph_to_calc = findGraph(withoutParentheses);
+            std::string file_name = findAndCheckFileName(withoutParentheses);
+
+            saveGraph(calculate(graph_to_calc), file_name);
+
+        } else if(key_word == "print"){
+            stream << calculate(withoutParentheses);
+        } else if(key_word == "delete"){
+            if(withoutParentheses.size() != 1){
+                throw(UnrecognizedCommand(original_command));
+            } else {
+                std::string graph_name = withoutParentheses[0];
+                checkGraphVariable(graph_name);
+                symbol_table.erase(graph_name);
+            }
+        }
     }
 }
+
+
+void clearTempGraphs(){
+    std::vector<std::string> toDelete;
+    for(auto const & graph : symbol_table) {
+        if(graph.first.find("TEMP") == 0){
+            toDelete.push_back(graph.first);
+        }
+    }
+
+    for(auto const & temp_graph : toDelete){
+        symbol_table.erase(temp_graph);
+    }
+}
+
+
+void read_command(std::basic_string<char> &command, std::ostream &os){
+    original_command = command;
+    command = removeLiteralsAndLoad(command);
+    std::vector<std::string> command_vector = convertCommandToVector(command);
+    if(command_vector.empty()){
+        return;
+    }
+    if(containsKeyWord(command_vector)) {
+        wordCommand(command_vector, os);
+    } else if(command_vector[1][0] == '='){
+        std::string graph_name = command_vector[0];
+        command_vector.erase(command_vector.begin());
+        command_vector.erase(command_vector.begin());
+        Graph graph = calculate(command_vector);
+        symbol_table[graph_name] = graph;
+    } else {
+        throw(UnrecognizedCommand(original_command));
+    }
+    clearTempGraphs();
+}
+
+
 
 int main(int argc, char** argv){
 
@@ -224,60 +281,103 @@ int main(int argc, char** argv){
         while("quit" != trim(command)) {
             cout << "Gcalc> ";
             getline(cin, command);
-
+            if("quit" == trim(command)){
+                break;
+            }
             try {
                 read_command(command, cout);
             } catch (UnrecognizedCommand &error) {
+                clearTempGraphs();
                 cout << error.what() << std::endl;
                 continue;
             } catch (UndefinedVariable &error) {
+                clearTempGraphs();
                 cout << error.what() << std::endl;
                 continue;
             } catch (InvalidGraphName &error) {
+                clearTempGraphs();
                 cout << error.what() << std::endl;
                 continue;
             } catch (VertexName::InvalidVertexName &error) {
+                clearTempGraphs();
                 cout << error.what() << std::endl;
                 continue;
             } catch(Graph::EdgesHaveVerticesNotInGraph &error){
+                clearTempGraphs();
+                cout << error.what() << std::endl;
+                continue;
+            } catch(UnableToLoadGraph &error){
+                clearTempGraphs();
+                cout << error.what() << std::endl;
+                continue;
+            } catch(UnableToSaveGraph &error){
+                clearTempGraphs();
                 cout << error.what() << std::endl;
                 continue;
             }
         }
     } else if(argc == 3){
 
-        std::ifstream input_file;
-        input_file.open(argv[1]);
+        try{
+            std::ifstream input_file;
+            input_file.open(argv[1]);
+            if(!input_file){
+                throw(UnableToOpenFile(argv[1]));
+            }
 
-        std::ofstream output_file;
-        output_file.open(argv[2]);
+            std::ofstream output_file;
+            output_file.open(argv[2]);
+            if(!output_file){
+                throw(UnableToOpenFile(argv[2]));
+            }
+
+
 //add check if files open correctly
 
         std::basic_string<char> command;
         while(input_file.good() && "quit" != trim(command)){
             getline(input_file, command);
-
+            if("quit" == trim(command)){
+                break;
+            }
             try {
                 read_command(command, output_file);
             } catch (UnrecognizedCommand &error) {
+                clearTempGraphs();
                 output_file << error.what() << std::endl;
                 continue;
             } catch (UndefinedVariable &error) {
                 output_file << error.what() << std::endl;
+                clearTempGraphs();
                 continue;
             } catch (InvalidGraphName &error) {
+                clearTempGraphs();
                 output_file << error.what() << std::endl;
                 continue;
             } catch (VertexName::InvalidVertexName &error) {
+                clearTempGraphs();
                 output_file << error.what() << std::endl;
                 continue;
             } catch(Graph::EdgesHaveVerticesNotInGraph &error){
+                clearTempGraphs();
                 output_file << error.what() << std::endl;
                 continue;
+            } catch(UnableToLoadGraph &error){
+                clearTempGraphs();
+                cout << error.what() << std::endl;
+                continue;
+            } catch(UnableToSaveGraph &error){
+                clearTempGraphs();
+                cout << error.what() << std::endl;
+                continue;
             }
+        }
 
+        } catch (UnableToOpenFile &error){
+            cout << error.what() << std::endl;
         }
     } else {
-        std::cerr << "Wrong amount of arguments";
+        std::cerr << "Error: Wrong amount of arguments" << std::endl;
     }
+    return 0;
 }

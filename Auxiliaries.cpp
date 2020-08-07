@@ -43,12 +43,60 @@ void checkValidGraphName(std::basic_string<char> &graph_name){
 }
 
 
-std::queue<std::basic_string<char> > reversePolishNotation(std::basic_string<char> command){
-    std::list<std::string> tokens_list;
-    std::queue<std::string> output_queue;
-    std::stack<std::string> operator_stack;
+bool containsGraphLiteral(std::string const &command){
+    int openers = 0;
+    int closers = 0;
 
-    //tokenize and put into a list
+    for(auto const & character: command){
+        if(character == '{'){
+            openers++;
+        }
+        if(character == '}'){
+            closers++;
+        }
+        if(openers-closers > 1){
+            throw(UnrecognizedCommand(command));
+        }
+    }
+    if(openers > closers){
+        throw(UnrecognizedCommand(command));
+    }
+    return !(openers == 0 && closers == 0);
+}
+
+std::string findGraphLiteral(std::string const &command){
+    int opener = command.find('{');
+    int closer = command.find('}');
+
+    std::string graph_literal = trim(command.substr(opener + 1, closer - opener - 1));
+
+    return graph_literal;
+}
+
+bool containsLoad(std::string const &command){
+    return command.find("load") != std::string::npos;
+}
+
+std::string findLoad(std::string const &command){
+    int location = command.find("load");
+    std::string temp = trim(command.substr(location));
+
+    int end = temp.find(')');
+    std::string load_command = trim(temp.substr(0, end + 1));
+
+    return load_command;
+}
+
+std::string findFileInLoad(std::string const &load_command){
+    int start = load_command.find('(');
+    int end = load_command.find(')');
+    std::string file_name = trim(load_command.substr(start + 1, end - start - 1));
+    return file_name;
+}
+
+std::vector<std::string> convertCommandToVector(std::string command) {
+    std::vector<std::string> tokens_list;
+
     while(command.length() > 0){
         int character_number;
         for(character_number = 0; character_number < int(command.length()); ++character_number) {
@@ -67,9 +115,42 @@ std::queue<std::basic_string<char> > reversePolishNotation(std::basic_string<cha
         command = trim(command);
     }
 
-    while(!tokens_list.empty()){
-        std::string current_token = tokens_list.front();
-        tokens_list.pop_front();
+    return tokens_list;
+}
+
+bool containsKeyWord(std::vector<std::string> const & command_vector){
+    std::vector<std::basic_string<char> > word_commands{"delete", "print", "reset", "who", "save"};
+    for(auto const & key_word : word_commands){
+        if(!command_vector.empty()){
+            if(key_word == command_vector[0]){
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+std::string findKeyWord(std::vector<std::string> const &command_vector){
+    std::vector<std::basic_string<char> > word_commands{"delete", "print", "reset", "who", "save"};
+    for(auto const & key_word : word_commands){
+        if(key_word == command_vector[0]){
+            return key_word;
+        }
+    }
+    //should not get here
+    return "none";
+}
+
+
+
+std::queue<std::basic_string<char> > reversePolishNotation(std::vector<std::string> const & command){
+    std::vector<std::string> tokens_vector = command;
+    std::queue<std::string> output_queue;
+    std::stack<std::string> operator_stack;
+
+    while(!tokens_vector.empty()){
+        std::string current_token = tokens_vector.front();
+        tokens_vector.erase(tokens_vector.begin());
 
         //if its a graph
         if(isalpha(current_token[0])){
@@ -100,6 +181,108 @@ std::queue<std::basic_string<char> > reversePolishNotation(std::basic_string<cha
     return output_queue;
 }
 
+void saveGraph(Graph const & graph, std::string const & filename){
+    std::set<VertexName> vertices = graph.getVertices();
+    std::set<std::pair<VertexName, VertexName> > edges = graph.getEdges();
+
+    std::ofstream outfile(filename, std::ios_base::binary);
+    if(!outfile){
+        throw(UnableToSaveGraph(filename));
+    }
+
+    unsigned int amount_of_vertices = vertices.size();
+    unsigned int amount_of_edges = edges.size();
+
+    outfile.write((const char*)&amount_of_vertices, sizeof(amount_of_vertices));
+    outfile.write((const char*)&amount_of_edges, sizeof(amount_of_edges));
+
+    for(auto const & vertex : vertices){
+        if(!outfile.good()){
+            throw(UnableToSaveGraph(filename));
+        }
+        unsigned int length_of_vertex_name = vertex.length();
+        std::string vertex_name_string = vertex.toString();
+        outfile.write((char*)&length_of_vertex_name, sizeof(length_of_vertex_name));
+        outfile.write(&vertex_name_string[0], length_of_vertex_name);
+    }
+
+    for(auto const & edge: edges){
+        if(!outfile.good()){
+            throw(UnableToSaveGraph(filename));
+        }
+
+        std::string src_vertex = edge.first.toString();
+        unsigned int src_vertex_length = src_vertex.length();
+
+        std::string dst_vertex = edge.second.toString();
+        unsigned int dst_vertex_length = src_vertex.length();
+
+        outfile.write((char*)&src_vertex_length, sizeof(src_vertex_length));
+        outfile.write(&src_vertex[0], src_vertex_length);
+        outfile.write((char*)&dst_vertex_length, sizeof(dst_vertex_length));
+        outfile.write(&dst_vertex[0], dst_vertex_length);
+    }
+    outfile.close();
+}
+
+
+Graph loadGraph(std::string const & filename){
+    std::set<VertexName> vertices;
+    std::set<std::pair<VertexName, VertexName> > edges;
+
+    std::ifstream infile(filename, std::ios_base::binary);
+    if(!infile){
+        throw(UnableToLoadGraph(filename));
+    }
+    unsigned int amount_of_vertices;
+    unsigned int amount_of_edges;
+
+    infile.read((char*)&amount_of_vertices, sizeof(amount_of_vertices));
+    infile.read((char*)&amount_of_edges, sizeof(amount_of_edges));
+
+    for(unsigned int i = 0; i < amount_of_vertices; ++i){
+        if(!infile.good()){
+            throw(UnableToLoadGraph(filename));
+        }
+        unsigned int length_of_vertex_name;
+        infile.read((char*)&length_of_vertex_name, sizeof(length_of_vertex_name));
+        std::string vertex_name_string;
+        vertex_name_string.resize(length_of_vertex_name);
+        infile.read(&vertex_name_string[0], length_of_vertex_name);
+        VertexName vertex_name(vertex_name_string);
+        vertices.insert(vertex_name);
+    }
+
+    for(unsigned int i = 0; i < amount_of_edges; ++i){
+        if(!infile.good()){
+            throw(UnableToLoadGraph(filename));
+        }
+
+        unsigned int length_of_src_vertex_name;
+        unsigned int length_of_dst_vertex_name;
+        std::string src_vertex_name_string;
+        std::string dst_vertex_name_string;
+
+
+        infile.read((char*)&length_of_src_vertex_name, sizeof(length_of_src_vertex_name));
+        src_vertex_name_string.resize(length_of_src_vertex_name);
+        infile.read(&src_vertex_name_string[0], length_of_src_vertex_name);
+        VertexName src_vertex(src_vertex_name_string);
+
+        infile.read((char*)&length_of_dst_vertex_name, sizeof(length_of_dst_vertex_name));
+        dst_vertex_name_string.resize(length_of_dst_vertex_name);
+        infile.read(&dst_vertex_name_string[0], length_of_dst_vertex_name);
+        VertexName dst_vertex(dst_vertex_name_string);
+        edges.insert(std::pair<VertexName, VertexName>(src_vertex, dst_vertex));
+    }
+
+    infile.close();
+    Graph graph(vertices, edges);
+    return graph;
+}
+
+
+
 /**-------------------Error classes--------------------*/
 
 const char *UnrecognizedCommand::what() const noexcept {
@@ -127,4 +310,31 @@ const char *InvalidGraphName::what() const noexcept {
 InvalidGraphName::InvalidGraphName(const std::basic_string<char> &graph_name) {
     return_message = "Error: Invalid graph name ";
     return_message +=  "'" + graph_name + "'";
+}
+
+const char *UnableToLoadGraph::what() const noexcept {
+    return return_message.std::string::c_str();
+}
+
+UnableToLoadGraph::UnableToLoadGraph(const std::basic_string<char> &file_name) {
+    return_message = "Error: Unable to load graph ";
+    return_message +=  "'" + file_name + "'";
+}
+
+const char *UnableToSaveGraph::what() const noexcept {
+    return return_message.std::string::c_str();
+}
+
+UnableToSaveGraph::UnableToSaveGraph(const std::basic_string<char> &file_name) {
+    return_message = "Error: Unable to save graph to ";
+    return_message +=  "'" + file_name + "'";
+}
+
+const char *UnableToOpenFile::what() const noexcept {
+    return return_message.std::string::c_str();
+}
+
+UnableToOpenFile::UnableToOpenFile(const std::basic_string<char> &file_name) {
+    return_message = "Error: Unable to open file ";
+    return_message +=  "'" + file_name + "'";
 }

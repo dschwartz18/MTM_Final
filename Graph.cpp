@@ -108,6 +108,13 @@ Graph Graph::fullGraph(std::set<VertexName> vertices) {
     return full_graph;
 }
 
+std::set<VertexName> Graph::getVertices() const{
+    return vertices;
+}
+std::set<std::pair<VertexName, VertexName> > Graph::getEdges() const{
+    return edges;
+}
+
 std::ostream &operator<<(std::ostream &os, const Graph &graph) {
     for(auto const& vertex: graph.vertices){
         os << vertex << std::endl;
@@ -130,5 +137,7 @@ Graph::EdgesHaveVerticesNotInGraph::EdgesHaveVerticesNotInGraph(const VertexName
 const char *Graph::EdgesHaveVerticesNotInGraph::what() const noexcept {
     return return_message.std::string::c_str();
 }
+
+
 
 

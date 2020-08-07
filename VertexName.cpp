@@ -55,6 +55,9 @@ std::ostream &operator<<(std::ostream &os, const VertexName &name){
     return os << name.vertex_name;
 }
 
+unsigned int VertexName::length() const{
+    return vertex_name.length();
+}
 
 VertexName operator*(VertexName const &name1, VertexName const &name2) {
     std::basic_string<char> multiplied_name = '[' + name1.vertex_name + ';' + name2.vertex_name + ']';

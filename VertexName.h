@@ -19,6 +19,7 @@ public:
     VertexName& operator=(VertexName const &name) = default;
 
     std::basic_string<char> toString() const;
+    unsigned int length() const;
     bool operator<(VertexName const &name) const;
     bool operator!=(VertexName const &name) const;
 

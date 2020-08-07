@@ -30,7 +30,20 @@ std::basic_string<char> eliminate_spaces(std::basic_string<char> const &string);
 
 void checkValidGraphName(std::basic_string<char> &graph_name);
 
-std::queue<std::basic_string<char> > reversePolishNotation(std::basic_string<char> command);
+std::queue<std::basic_string<char> > reversePolishNotation(std::vector<std::string> const & command);
+
+
+std::vector<std::string> convertCommandToVector(std::string command);
+bool containsGraphLiteral(std::string const &command);
+std::string findGraphLiteral(std::string const &command);
+bool containsLoad(std::string const &command);
+std::string findLoad(std::string const &command);
+bool containsKeyWord(std::vector<std::string> const &command_vector);
+std::string findKeyWord(std::vector<std::string> const &command_vector);
+std::string findFileInLoad(std::string const &load_command);
+
+void saveGraph(Graph const & graph, std::string const & filename);
+Graph loadGraph(std::string const & filename);
 
 class UnrecognizedCommand : public std::exception{
     std::basic_string<char> return_message;
@@ -54,6 +67,30 @@ public:
     //~InvalidGraphName() = default;
     const char* what() const noexcept override;
     explicit InvalidGraphName(const std::basic_string<char>& graph_name);
+};
+
+class UnableToLoadGraph : public std:: exception{
+    std::basic_string<char> return_message;
+public:
+    //~InvalidGraphName() = default;
+    const char* what() const noexcept override;
+    explicit UnableToLoadGraph(const std::basic_string<char>& graph_name);
+};
+
+class UnableToSaveGraph : public std:: exception{
+    std::basic_string<char> return_message;
+public:
+    //~InvalidGraphName() = default;
+    const char* what() const noexcept override;
+    explicit UnableToSaveGraph(const std::basic_string<char>& file_name);
+};
+
+class UnableToOpenFile : public std:: exception{
+    std::basic_string<char> return_message;
+public:
+    //~InvalidGraphName() = default;
+    const char* what() const noexcept override;
+    explicit UnableToOpenFile(const std::basic_string<char>& file_name);
 };
 
 #endif //MTM_FINAL_AUXILIARIES_H

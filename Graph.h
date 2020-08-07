@@ -32,6 +32,9 @@ public:
     Graph operator*(Graph const &graph);
     Graph operator!();
 
+    std::set<VertexName> getVertices() const;
+    std::set<std::pair<VertexName, VertexName> > getEdges() const;
+
     friend std::ostream &operator<<(std::ostream &os, const Graph &graph);
 
     class EdgesHaveVerticesNotInGraph : public std::exception {
@@ -41,6 +44,7 @@ public:
         explicit EdgesHaveVerticesNotInGraph(const VertexName &vertex, const std::pair<VertexName,VertexName> &edge);
         //~EdgesHaveVerticesNotInGraph() = default;
         const char* what() const noexcept override;
+
     };
 
 };

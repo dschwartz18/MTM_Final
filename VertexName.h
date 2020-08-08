@@ -14,7 +14,7 @@ class VertexName{
 public:
     explicit VertexName(std::basic_string<char> const &name);
     VertexName() = default;
-    ~VertexName() = default;
+    //~VertexName() = default;
     VertexName(VertexName const &name) = default;
     VertexName& operator=(VertexName const &name) = default;
 

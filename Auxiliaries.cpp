@@ -37,6 +37,12 @@ void checkValidGraphName(std::basic_string<char> &graph_name){
     if(!isalpha(graph_name[0])){
         valid = false;
     }
+    std::vector<std::basic_string<char> > word_commands{"delete", "print", "reset", "who", "save", "load"};
+    for(auto const & key_word : word_commands){
+        if(key_word == graph_name){
+            valid = false;
+        }
+    }
     if(!valid){
         throw(InvalidGraphName(graph_name));
     }
@@ -55,6 +61,9 @@ bool containsGraphLiteral(std::string const &command){
             closers++;
         }
         if(openers-closers > 1){
+            throw(UnrecognizedCommand(command));
+        }
+        if(closers > openers){
             throw(UnrecognizedCommand(command));
         }
     }
@@ -177,7 +186,6 @@ std::queue<std::basic_string<char> > reversePolishNotation(std::vector<std::stri
         output_queue.push(operator_stack.top());
         operator_stack.pop();
     }
-
     return output_queue;
 }
 

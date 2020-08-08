@@ -126,6 +126,36 @@ std::ostream &operator<<(std::ostream &os, const Graph &graph) {
     return os;
 }
 
+void Graph::setNewEdge(char* &src_name, char* &dst_name) {
+    try {
+        VertexName src_vertex(src_name);
+        VertexName dst_vertex(dst_name);
+
+        std::pair<VertexName,VertexName> edge(src_vertex, dst_vertex);
+
+        if(vertices.find(src_vertex) == vertices.end()){
+            throw(EdgesHaveVerticesNotInGraph(src_vertex, edge));
+        }
+        if(vertices.find(edge.second) == vertices.end()){
+            throw(EdgesHaveVerticesNotInGraph(dst_vertex, edge));
+        }
+        edges.insert(std::pair<VertexName,VertexName>(src_vertex, dst_vertex));
+    } catch (VertexName::InvalidVertexName& error){
+        std::cout << error.what() << std::endl;
+    } catch (EdgesHaveVerticesNotInGraph& error){
+        std::cout << error.what() << std::endl;
+    }
+}
+
+void Graph::setNewVertex(char* &name) {
+    try {
+        VertexName vertex_name(name);
+        vertices.insert(vertex_name);
+    } catch (VertexName::InvalidVertexName& error){
+        std::cout << error.what() << std::endl;
+    }
+}
+
 
 Graph::EdgesHaveVerticesNotInGraph::EdgesHaveVerticesNotInGraph(const VertexName &vertex, const std::pair<VertexName,VertexName> &edge) {
     return_message = "Error: The edge ";

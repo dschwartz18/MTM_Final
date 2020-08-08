@@ -28,9 +28,13 @@ Graph calculatePolishNotation(std::queue<std::string> &rpolish_queue){
         return symbol_table[rpolish_queue.front()];
     }
 
+    Graph return_graph;
     Graph calculated_graph;
+    Graph calculated_graph_complement;
     std::string calculated_graph_name = "_graph";
+    std::string calculated_graph_name_complement = "!graph";
     symbol_table[calculated_graph_name] = calculated_graph;
+    symbol_table[calculated_graph_name_complement] = calculated_graph_complement;
     std::stack<std::string> calculation_stack;
 
 
@@ -40,10 +44,11 @@ Graph calculatePolishNotation(std::queue<std::string> &rpolish_queue){
             rpolish_queue.pop();
         } else if(rpolish_queue.front()[0] == '!') {
             checkGraphVariable(calculation_stack.top());
-            symbol_table[calculated_graph_name] = !(symbol_table[calculation_stack.top()]);
+            symbol_table[calculated_graph_name_complement] = !(symbol_table[calculation_stack.top()]);
             calculation_stack.pop();
-            calculation_stack.push(calculated_graph_name);
+            calculation_stack.push(calculated_graph_name_complement);
             rpolish_queue.pop();
+            return_graph = symbol_table[calculated_graph_name_complement];
         } else {
             checkGraphVariable(calculation_stack.top());
             Graph right_side = symbol_table[calculation_stack.top()];
@@ -60,13 +65,14 @@ Graph calculatePolishNotation(std::queue<std::string> &rpolish_queue){
                 case '-': symbol_table[calculated_graph_name] = left_side - right_side; break;
                 default: throw(UnrecognizedCommand(original_command));
             }
-
             calculation_stack.push(calculated_graph_name);
             rpolish_queue.pop();
+            return_graph = symbol_table[calculated_graph_name];
         }
     }
-    Graph return_graph = symbol_table[calculated_graph_name];
+    //Graph return_graph = symbol_table[calculated_graph_name];
     symbol_table.erase(calculated_graph_name);
+    symbol_table.erase(calculated_graph_name_complement);
 
     return return_graph;
 }
@@ -131,9 +137,16 @@ Graph create_graph(basic_string<char> const &command) {
 
 
 std::string removeLiteralsAndLoad(std::basic_string<char> command){
+    int counter = 0;
+    std::string file_name;
+
+    if(command.find("save") != std::string::npos){
+        file_name = trim(command.substr(command.rfind(',')+1, command.rfind(')')-command.rfind(',')-1));
+        command.replace(command.rfind(',') + 1, command.rfind(')') - command.rfind(',') - 1, "temp");
+    }
+
     while(containsGraphLiteral(command)){
-        int counter = 0;
-        ++counter;
+        counter++;
         std::string graph_literal = findGraphLiteral(command);
         Graph temp = create_graph(graph_literal);
 
@@ -144,17 +157,20 @@ std::string removeLiteralsAndLoad(std::basic_string<char> command){
     }
 
     while(containsLoad(command)){
-        int counter = 0;
-        ++counter;
+        counter++;
         std::string load_command = findLoad(command);
         std::string file_to_load = findFileInLoad(load_command);
         Graph temp = loadGraph(file_to_load);
 
-        std::string const temp_graph_name = "TEMPP" + std::to_string(counter);
+        std::string const temp_graph_name = "TEMP" + std::to_string(counter);
         symbol_table[temp_graph_name] = temp;
 
         command.replace(command.find("load"), load_command.length(), temp_graph_name);
     }
+    if(command.find("save") != std::string::npos){
+        command.replace(command.rfind(',') + 1, command.rfind(')') - command.rfind(',') - 1, file_name);
+    }
+
     return command;
 }
 
@@ -252,17 +268,17 @@ void clearTempGraphs(){
 
 void read_command(std::basic_string<char> &command, std::ostream &os){
     original_command = command;
+    command = trim(command);
     command = removeLiteralsAndLoad(command);
     std::vector<std::string> command_vector = convertCommandToVector(command);
-    if(command_vector.empty()){
-        return;
-    }
+
     if(containsKeyWord(command_vector)) {
         wordCommand(command_vector, os);
-    } else if(command_vector[1][0] == '='){
+    } else if(command_vector.size() > 1  && command_vector[1][0] == '='){
         std::string graph_name = command_vector[0];
         command_vector.erase(command_vector.begin());
         command_vector.erase(command_vector.begin());
+
         Graph graph = calculate(command_vector);
         symbol_table[graph_name] = graph;
     } else {

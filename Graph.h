@@ -9,7 +9,6 @@
 
 #include <iostream>
 #include <set>
-#include <map>
 #include <utility>
 #include <algorithm>
 
@@ -22,7 +21,7 @@ class Graph{
 public:
     Graph() = default;
     Graph(std::set<VertexName> &vertices_parameter, std::set<std::pair<VertexName,VertexName> > &edges_parameter);
-    ~Graph() = default;
+    //~Graph() = default;
     Graph(Graph const &graph) = default;
     Graph& operator=(Graph const &graph) = default;
 
@@ -34,6 +33,9 @@ public:
 
     std::set<VertexName> getVertices() const;
     std::set<std::pair<VertexName, VertexName> > getEdges() const;
+
+    void setNewVertex(char* &vertex_name);
+    void setNewEdge(char* &src_name, char* &dst_name);
 
     friend std::ostream &operator<<(std::ostream &os, const Graph &graph);
 
@@ -48,5 +50,7 @@ public:
     };
 
 };
+
+
 
 #endif //MTM_FINAL_GRAPH_H

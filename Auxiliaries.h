@@ -16,9 +16,9 @@
 #include <queue>
 #include <stack>
 #include <list>
+#include <map>
 
 #include "Graph.h"
-#include "VertexName.h"
 
 const std::string WHITESPACE = " \n\r\t\f\v";
 

@@ -21,6 +21,7 @@ class Graph{
 public:
     Graph() = default;
     Graph(std::set<VertexName> &vertices_parameter, std::set<std::pair<VertexName,VertexName> > &edges_parameter);
+    Graph(std::multiset<VertexName> &vertices_parameter, std::multiset<std::pair<VertexName,VertexName> > &edges_parameter);
     //~Graph() = default;
     Graph(Graph const &graph) = default;
     Graph& operator=(Graph const &graph) = default;
@@ -41,9 +42,26 @@ public:
 
     class EdgesHaveVerticesNotInGraph : public std::exception {
         std::basic_string<char> return_message;
-
     public:
         explicit EdgesHaveVerticesNotInGraph(const VertexName &vertex, const std::pair<VertexName,VertexName> &edge);
+        //~EdgesHaveVerticesNotInGraph() = default;
+        const char* what() const noexcept override;
+
+    };
+
+    class DuplicateVertices : public std::exception {
+        std::basic_string<char> return_message;
+    public:
+        explicit DuplicateVertices(const VertexName &vertex);
+        //~EdgesHaveVerticesNotInGraph() = default;
+        const char* what() const noexcept override;
+
+    };
+
+    class ParallelEdges : public std::exception {
+        std::basic_string<char> return_message;
+    public:
+        explicit ParallelEdges(const std::pair<VertexName,VertexName> &edge);
         //~EdgesHaveVerticesNotInGraph() = default;
         const char* what() const noexcept override;
 

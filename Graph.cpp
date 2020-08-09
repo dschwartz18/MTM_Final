@@ -14,10 +14,39 @@ Graph::Graph(std::set<VertexName> &vertices_parameter, std::set<std::pair<Vertex
             throw(EdgesHaveVerticesNotInGraph(edge.second, edge));
         }
     }
+
     vertices = vertices_parameter;
     edges = edges_parameter;
 }
 
+Graph::Graph(std::multiset<VertexName> &vertices_parameter, std::multiset<std::pair<VertexName,VertexName> > &edges_parameter){
+
+    for(auto const& vertex : vertices_parameter){
+        if(vertices_parameter.count(vertex) > 1){
+            throw(DuplicateVertices(vertex));
+        }
+    }
+    for(auto const& edge : edges_parameter){
+        if(edges_parameter.count(edge) > 1){
+            throw(ParallelEdges(edge));
+        }
+    }
+
+    std::set<VertexName> vertices_set(vertices_parameter.begin(), vertices_parameter.end());
+    std::set<std::pair<VertexName,VertexName> > edges_set(edges_parameter.begin(), edges_parameter.end());
+
+    for(auto const & edge: edges_set){
+        if(vertices_set.find(edge.first) == vertices_set.end()){
+            throw(EdgesHaveVerticesNotInGraph(edge.first, edge));
+        }
+        if(vertices_set.find(edge.second) == vertices_set.end()){
+            throw(EdgesHaveVerticesNotInGraph(edge.second, edge));
+        }
+    }
+
+    vertices = vertices_set;
+    edges = edges_set;
+}
 
 Graph Graph::operator+(Graph const &graph) {
     std::set<VertexName> combined_vertices;
@@ -127,34 +156,31 @@ std::ostream &operator<<(std::ostream &os, const Graph &graph) {
 }
 
 void Graph::setNewEdge(char* &src_name, char* &dst_name) {
-    try {
-        VertexName src_vertex(src_name);
-        VertexName dst_vertex(dst_name);
+    VertexName src_vertex(src_name);
+    VertexName dst_vertex(dst_name);
 
-        std::pair<VertexName,VertexName> edge(src_vertex, dst_vertex);
-
-        if(vertices.find(src_vertex) == vertices.end()){
-            throw(EdgesHaveVerticesNotInGraph(src_vertex, edge));
-        }
-        if(vertices.find(edge.second) == vertices.end()){
-            throw(EdgesHaveVerticesNotInGraph(dst_vertex, edge));
-        }
-        edges.insert(std::pair<VertexName,VertexName>(src_vertex, dst_vertex));
-    } catch (VertexName::InvalidVertexName& error){
-        std::cout << error.what() << std::endl;
-    } catch (EdgesHaveVerticesNotInGraph& error){
-        std::cout << error.what() << std::endl;
+    std::pair<VertexName,VertexName> edge(src_vertex, dst_vertex);
+    if(edges.find(edge) != edges.end()){
+        throw(ParallelEdges(edge));
     }
+    if(vertices.find(src_vertex) == vertices.end()){
+        throw(EdgesHaveVerticesNotInGraph(src_vertex, edge));
+    }
+    if(vertices.find(edge.second) == vertices.end()){
+        throw(EdgesHaveVerticesNotInGraph(dst_vertex, edge));
+    }
+    edges.insert(std::pair<VertexName,VertexName>(src_vertex, dst_vertex));
+
 }
 
 void Graph::setNewVertex(char* &name) {
-    try {
-        VertexName vertex_name(name);
-        vertices.insert(vertex_name);
-    } catch (VertexName::InvalidVertexName& error){
-        std::cout << error.what() << std::endl;
+    VertexName vertex_name(name);
+    if(vertices.find(vertex_name) != vertices.end()){
+        throw(DuplicateVertices(vertex_name));
     }
+    vertices.insert(vertex_name);
 }
+
 
 
 Graph::EdgesHaveVerticesNotInGraph::EdgesHaveVerticesNotInGraph(const VertexName &vertex, const std::pair<VertexName,VertexName> &edge) {
@@ -168,6 +194,21 @@ const char *Graph::EdgesHaveVerticesNotInGraph::what() const noexcept {
     return return_message.std::string::c_str();
 }
 
+Graph::DuplicateVertices::DuplicateVertices(const VertexName &vertex) {
+    return_message = "Error: A duplicated vertex was inputted ";
+    return_message += "'" + vertex.toString() + "'";
+}
+
+const char *Graph::DuplicateVertices::what() const noexcept {
+    return return_message.std::string::c_str();
+}
 
 
+Graph::ParallelEdges::ParallelEdges(const std::pair<VertexName,VertexName> &edge) {
+    return_message = "Error: Parallel edges were inputted ";
+    return_message += "<" + edge.first.toString() + "," + edge.second.toString() + ">";
+}
 
+const char *Graph::ParallelEdges::what() const noexcept {
+    return return_message.std::string::c_str();
+}

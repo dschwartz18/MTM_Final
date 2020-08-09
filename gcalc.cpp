@@ -4,6 +4,8 @@
 
 #include "Auxiliaries.h"
 
+#define TEMPORARY_GRAPH_NAME "TEMP"
+
 using std::cout;
 using std::cin;
 using std::basic_string;
@@ -85,8 +87,8 @@ Graph calculate(std::vector<std::string> &command){
 
 
 Graph create_graph(basic_string<char> const &command) {
-    std::set<VertexName> vertices;
-    std::set<std::pair<VertexName, VertexName> > edges;
+    std::multiset<VertexName> vertices;
+    std::multiset<std::pair<VertexName, VertexName> > edges;
 
     basic_string<char> vertices_string;
     basic_string<char> edges_string;
@@ -94,6 +96,10 @@ Graph create_graph(basic_string<char> const &command) {
     int graph_separator = command.find('|');
     if (graph_separator == int(std::string::npos)) {
         vertices_string = command;
+        if(vertices_string.length() == 0){
+            Graph new_graph(vertices, edges);
+            return new_graph;
+        }
     } else {
         vertices_string = command.substr(0, graph_separator);
         edges_string = trim(command.substr(graph_separator + 1));
@@ -150,7 +156,7 @@ std::string removeLiteralsAndLoad(std::basic_string<char> command){
         std::string graph_literal = findGraphLiteral(command);
         Graph temp = create_graph(graph_literal);
 
-        std::string const temp_graph_name = "TEMP" + std::to_string(counter);
+        std::string const temp_graph_name = TEMPORARY_GRAPH_NAME + std::to_string(counter);
         symbol_table[temp_graph_name] = temp;
 
         command.replace(command.find('{'), command.find('}')-command.find('{')+1, temp_graph_name);
@@ -162,7 +168,7 @@ std::string removeLiteralsAndLoad(std::basic_string<char> command){
         std::string file_to_load = findFileInLoad(load_command);
         Graph temp = loadGraph(file_to_load);
 
-        std::string const temp_graph_name = "TEMP" + std::to_string(counter);
+        std::string const temp_graph_name = TEMPORARY_GRAPH_NAME + std::to_string(counter);
         symbol_table[temp_graph_name] = temp;
 
         command.replace(command.find("load"), load_command.length(), temp_graph_name);
@@ -208,7 +214,6 @@ std::string findAndCheckFileName(std::vector<std::string> command_vector){
 
     for(auto const & character : file_name){
         if(character == '(' || character == ')' || character == ','){
-            //TODO make new error invalid file name
             throw(UnrecognizedCommand(original_command));
         }
     }
@@ -329,6 +334,14 @@ int main(int argc, char** argv){
                 clearTempGraphs();
                 cout << error.what() << std::endl;
                 continue;
+            } catch(Graph::DuplicateVertices &error){
+                clearTempGraphs();
+                cout << error.what() << std::endl;
+                continue;
+            } catch(Graph::ParallelEdges &error){
+                clearTempGraphs();
+                cout << error.what() << std::endl;
+                continue;
             }
         }
     } else if(argc == 3){
@@ -385,14 +398,21 @@ int main(int argc, char** argv){
                 clearTempGraphs();
                 output_file << error.what() << std::endl;
                 continue;
+            } catch(Graph::DuplicateVertices &error){
+                clearTempGraphs();
+                output_file << error.what() << std::endl;
+                continue;
+            } catch(Graph::ParallelEdges &error){
+                clearTempGraphs();
+                output_file << error.what() << std::endl;
+                continue;
             }
         }
-
         } catch (UnableToOpenFile &error){
-            cout << error.what() << std::endl;
+            std::cerr << error.what() << std::endl;
         }
     } else {
-        std::cerr << "Error: Wrong amount of arguments" << std::endl;
+        std::cerr << "Error: Wrong amount of arguments. Must be 1 argument (command line version) or 3 arguments (batch version)." << std::endl;
     }
     return 0;
 }

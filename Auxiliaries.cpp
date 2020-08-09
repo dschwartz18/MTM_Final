@@ -168,7 +168,11 @@ std::queue<std::basic_string<char> > reversePolishNotation(std::vector<std::stri
            operator_stack.push(current_token);
         } else if (current_token[0] != ')') {
             if(!operator_stack.empty()) {
-                if ((operator_stack.top()[0] == '!' || !(operator_stack.top()[0] == '('))) {
+                if (operator_stack.top()[0] == '!') {
+                    output_queue.push(operator_stack.top());
+                    operator_stack.pop();
+                }
+                if (!(operator_stack.top()[0] == '(')){
                     output_queue.push(operator_stack.top());
                     operator_stack.pop();
                 }
@@ -235,8 +239,8 @@ void saveGraph(Graph const & graph, std::string const & filename){
 
 
 Graph loadGraph(std::string const & filename){
-    std::set<VertexName> vertices;
-    std::set<std::pair<VertexName, VertexName> > edges;
+    std::multiset<VertexName> vertices;
+    std::multiset<std::pair<VertexName, VertexName> > edges;
 
     std::ifstream infile(filename, std::ios_base::binary);
     if(!infile){

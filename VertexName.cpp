@@ -71,9 +71,10 @@ bool VertexName::operator<(VertexName const &name) const{
 }
 
 bool VertexName::operator!=(const VertexName &name) const {
-    bool less_than = vertex_name != name.vertex_name;
-    return less_than;
+    bool not_equal = vertex_name != name.vertex_name;
+    return not_equal;
 }
+
 
 std::basic_string<char> VertexName::toString() const {
     return vertex_name;

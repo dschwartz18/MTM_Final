@@ -48,7 +48,7 @@ Graph loadGraph(std::string const & filename);
 class UnrecognizedCommand : public std::exception{
     std::basic_string<char> return_message;
 public:
-    //m~UnrecognizedCommand() = default;
+    //~UnrecognizedCommand() = default;
     const char* what() const noexcept override;
     explicit UnrecognizedCommand(const std::basic_string<char>& command);
 };

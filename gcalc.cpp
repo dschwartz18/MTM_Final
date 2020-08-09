@@ -11,7 +11,6 @@ using std::cin;
 using std::basic_string;
 
 
-//global symbol table
 std::map<std::basic_string<char>, Graph> symbol_table;
 std::string original_command;
 
@@ -261,7 +260,7 @@ void wordCommand(std::vector<std::string> &command_vector, std::ostream &stream)
 void clearTempGraphs(){
     std::vector<std::string> toDelete;
     for(auto const & graph : symbol_table) {
-        if(graph.first.find("TEMP") == 0){
+        if(graph.first.find(TEMPORARY_GRAPH_NAME) == 0){
             toDelete.push_back(graph.first);
         }
     }
